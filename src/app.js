@@ -1,11 +1,11 @@
 import express from 'express';
-import passport from 'passport';
 import session from 'express-session';
-import connectDB from './config/mongo';
-import authRoutes from './routes/auth';
-import shortUrlRoutes from './routes/url';
-import { dashboard } from './controllers/dashboard';
-import './config/passport';
+import connectDB from './config/mongo.js';
+import passport from './config/passport.js'; // Ensure this is properly exported as a module
+import authRoutes from './routes/auth.js';
+import shortUrlRoutes from './routes/url.js';
+import  dashboard  from './controllers/dashboard.js';
+import dotenv from 'dotenv';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
