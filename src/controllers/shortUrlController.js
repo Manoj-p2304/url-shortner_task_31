@@ -46,7 +46,7 @@ export const createShortUrl = async (req, res) => {
             
             // Track analytics for this short URL
             const userAgent = req.headers['user-agent']; // Get user-agent for tracking
-            await updateAnalytics(shortUrl.alias, userAgent);
+            await updateAnalytics(shortUrl.shortUrl, userAgent);
             
             return res.redirect(shortUrl.longUrl);
         } catch (err) {
