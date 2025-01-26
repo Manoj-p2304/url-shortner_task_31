@@ -8,39 +8,45 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL, // Make sure this matches your Google console settings
+      callbackURL: process.env.GOOGLE_CALLBACK_URL,
+      accessType: 'offline',
     },
     async (accessToken, refreshToken, profile, done) => {
-      try {
-        const existingUser = await User.findOne({ googleId: profile.id });
+      console.log('Access Token:', accessToken);
+      console.log('Refresh Token:', refreshToken);
+      console.log('Profile:', profile); // This will show user data
 
-        if (existingUser) {
-          console.log('Existing user found:', existingUser);
-          return done(null, existingUser);
-        }
+      // This is where you can store user information or handle the login
+      const existingUser = await User.findOne({ googleId: profile.id });
 
-        const newUser = await User.create({
-          googleId: profile.id,
-          name: profile.displayName,
-          email: profile.emails && profile.emails[0] ? profile.emails[0].value : null,
-        });
-        console.log('New user created:', newUser);
-
-        done(null, newUser);
-      } catch (err) {
-        done(err);
+      if (existingUser) {
+        return done(null, existingUser);
       }
+
+      const newUser = await User.create({
+        googleId: profile.id,
+        name: profile.displayName,
+        email: profile.emails && profile.emails[0] ? profile.emails[0].value : null,
+      });
+      done(null, newUser);
     }
   )
 );
 
-passport.serializeUser((user, done) => {
-  done(null, user.id);
+
+passport.serializeUser((profile, done) => {
+  done(null, {
+    id: profile.id,
+    googleId: profile.googleId,
+    name: profile.name,
+    email: profile.email
+  });
 });
 
-passport.deserializeUser(async (id, done) => {
+passport.deserializeUser(async (userData, done) => {
   try {
-    const user = await User.findById(id);
+    // Use userData.id instead of profile.id
+    const user = await User.findById(userData.id);
     done(null, user);
   } catch (err) {
     done(err, null);
