@@ -168,67 +168,73 @@ export const getOverallAnalytics = async (req, res) => {
 };
 
 export const updateAnalytics = async (shortUrl, userAgent) => {
-  try {
-    const osName = getOS(userAgent);
-    const deviceName = getDeviceType(userAgent);
-    const currentDate = new Date().toISOString().split('T')[0];
-
-    let analytics = await Analytics.findOne({ shortUrl });
-    
-    if (!analytics) {
-      analytics = new Analytics({
-        shortUrl,
-        totalClicks: 0,
-        uniqueUsers: [],
-        clicksByDate: [],
-        osType: [],
-        deviceType: []
-      });
-    }
-
-    analytics.totalClicks += 1;
-
-    if (!analytics.uniqueUsers.includes(userAgent)) {
-      analytics.uniqueUsers.push(userAgent);
-    }
-
-    const dateIndex = analytics.clicksByDate.findIndex(item => item.date === currentDate);
-    if (dateIndex !== -1) {
-      analytics.clicksByDate[dateIndex].clickCount += 1;
-    } else {
-      analytics.clicksByDate.push({ date: currentDate, clickCount: 1 });
-    }
-
-    const osIndex = analytics.osType.findIndex(item => item.osName === osName);
-    if (osIndex !== -1) {
-      analytics.osType[osIndex].uniqueClicks += 1;
-      if (!analytics.osType[osIndex].uniqueUsers.includes(userAgent)) {
-        analytics.osType[osIndex].uniqueUsers.push(userAgent);
+    try {
+      const osName = getOS(userAgent);
+      const deviceName = getDeviceType(userAgent);
+      const currentDate = new Date().toISOString().split('T')[0];
+  
+      // Find or create analytics document
+      let analytics = await Analytics.findOne({ shortUrl });
+      
+      if (!analytics) {
+        analytics = new Analytics({
+          shortUrl,
+          totalClicks: 0,
+          uniqueUsers: [],
+          clicksByDate: [],
+          osType: [],
+          deviceType: []
+        });
       }
-    } else {
-      analytics.osType.push({
-        osName,
-        uniqueClicks: 1,
-        uniqueUsers: [userAgent]
-      });
-    }
-
-    const deviceIndex = analytics.deviceType.findIndex(item => item.deviceName === deviceName);
-    if (deviceIndex !== -1) {
-      analytics.deviceType[deviceIndex].uniqueClicks += 1;
-      if (!analytics.deviceType[deviceIndex].uniqueUsers.includes(userAgent)) {
-        analytics.deviceType[deviceIndex].uniqueUsers.push(userAgent);
+  
+      // Update total clicks
+      analytics.totalClicks += 1;
+  
+      // Update unique users
+      if (!analytics.uniqueUsers.includes(userAgent)) {
+        analytics.uniqueUsers.push(userAgent);
       }
-    } else {
-      analytics.deviceType.push({
-        deviceName,
-        uniqueClicks: 1,
-        uniqueUsers: [userAgent]
-      });
+  
+      // Update clicks by date
+      const dateIndex = analytics.clicksByDate.findIndex(item => item.date === currentDate);
+      if (dateIndex !== -1) {
+        analytics.clicksByDate[dateIndex].clickCount += 1;
+      } else {
+        analytics.clicksByDate.push({ date: currentDate, clickCount: 1 });
+      }
+  
+      // Update OS type
+      const osIndex = analytics.osType.findIndex(item => item.osName === osName);
+      if (osIndex !== -1) {
+        analytics.osType[osIndex].uniqueClicks += 1;
+        if (!analytics.osType[osIndex].uniqueUsers.includes(userAgent)) {
+          analytics.osType[osIndex].uniqueUsers.push(userAgent);
+        }
+      } else {
+        analytics.osType.push({ 
+          osName, 
+          uniqueClicks: 1, 
+          uniqueUsers: [userAgent] 
+        });
+      }
+  
+      // Update device type
+      const deviceIndex = analytics.deviceType.findIndex(item => item.deviceName === deviceName);
+      if (deviceIndex !== -1) {
+        analytics.deviceType[deviceIndex].uniqueClicks += 1;
+        if (!analytics.deviceType[deviceIndex].uniqueUsers.includes(userAgent)) {
+          analytics.deviceType[deviceIndex].uniqueUsers.push(userAgent);
+        }
+      } else {
+        analytics.deviceType.push({ 
+          deviceName, 
+          uniqueClicks: 1, 
+          uniqueUsers: [userAgent] 
+        });
+      }
+  
+      await analytics.save();
+    } catch (err) {
+      console.error('Error updating analytics:', err);
     }
-
-    await analytics.save();
-  } catch (err) {
-    console.error('Error updating analytics:', err);
-  }
-};
+  };
