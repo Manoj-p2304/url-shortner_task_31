@@ -1,0 +1,350 @@
+openapi: 3.0.0
+info:
+  title: URL Shortener API
+  description: API documentation for the URL shortener service with Google OAuth authentication and analytics
+  version: 1.0.0
+servers:
+  - url: ${SERVER_URL}
+    description: Local development server
+
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: connect.sid
+  schemas:
+    ShortUrl:
+      type: object
+      properties:
+        longUrl:
+          type: string
+          example: "https://www.example.com/very/long/url"
+        shortUrl:
+          type: string
+          example: "abc123"
+        customAlias:
+          type: string
+          example: "my-custom-link"
+        topic:
+          type: string
+          example: "technology"
+        userId:
+          type: string
+          example: "118234567892214561234"
+        createdAt:
+          type: string
+          format: date-time
+    User:
+      type: object
+      properties:
+        email:
+          type: string
+          example: "user@example.com"
+        name:
+          type: string
+          example: "John Doe"
+        googleId:
+          type: string
+          example: "118234567892214561234"
+    Analytics:
+      type: object
+      properties:
+        totalClicks:
+          type: integer
+          example: 150
+        uniqueUsers:
+          type: integer
+          example: 75
+        clicksByDate:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                example: "2025-01-27"
+              clickCount:
+                type: integer
+                example: 25
+        osType:
+          type: array
+          items:
+            type: object
+            properties:
+              osName:
+                type: string
+                example: "Windows"
+              uniqueClicks:
+                type: integer
+                example: 45
+              uniqueUsers:
+                type: integer
+                example: 30
+        deviceType:
+          type: array
+          items:
+            type: object
+            properties:
+              deviceName:
+                type: string
+                example: "Desktop"
+              uniqueClicks:
+                type: integer
+                example: 80
+              uniqueUsers:
+                type: integer
+                example: 50
+
+paths:
+  /auth/google:
+    get:
+      summary: Initiate Google OAuth2.0 authentication
+      tags:
+        - Authentication
+      description: Redirects user to Google consent screen for authentication
+      responses:
+        '302':
+          description: Redirects to Google authentication page
+          headers:
+            Location:
+              schema:
+                type: string
+              description: Google OAuth consent screen URL
+
+  /auth/google/callback:
+    get:
+      summary: Google OAuth callback endpoint
+      tags:
+        - Authentication
+      description: Handles the response from Google after user authorization
+      parameters:
+        - in: query
+          name: code
+          schema:
+            type: string
+          description: Authorization code from Google
+        - in: query
+          name: state
+          schema:
+            type: string
+          description: State parameter for security verification
+      responses:
+        '302':
+          description: Successful authentication redirect
+          headers:
+            Location:
+              schema:
+                type: string
+              description: Redirects to dashboard on success
+        '401':
+          description: Authentication failed, redirects back to Google auth
+
+  /auth/logout:
+    get:
+      summary: Log out current user
+      tags:
+        - Authentication
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: Successfully logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Successfully logged out!"
+        '500':
+          description: Error during logout
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Error logging out"
+
+  /api/shorten:
+    post:
+      summary: Create a shortened URL
+      tags:
+        - URLs
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - longUrl
+              properties:
+                longUrl:
+                  type: string
+                  example: "https://www.example.com/very/long/url"
+                customAlias:
+                  type: string
+                  example: "my-custom-link"
+                topic:
+                  type: string
+                  example: "technology"
+      responses:
+        '201':
+          description: URL successfully shortened
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  shortUrl:
+                    type: string
+                  createdAt:
+                    type: string
+                    format: date-time
+        '401':
+          description: Not authenticated
+        '500':
+          description: Failed to create short URL
+
+  /api/shorten/{alias}:
+    get:
+      summary: Redirect to original URL and track analytics
+      tags:
+        - URLs
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: alias
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect to original URL
+        '404':
+          description: Short URL not found
+        '500':
+          description: Error fetching short URL
+
+  /api/analytics/overall:
+    get:
+      summary: Get overall analytics for all user's URLs
+      tags:
+        - Analytics
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: Overall analytics data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalUrls:
+                    type: integer
+                    example: 10
+                  totalClicks:
+                    type: integer
+                  uniqueUsers:
+                    type: integer
+                  clicksByDate:
+                    $ref: '#/components/schemas/Analytics/properties/clicksByDate'
+                  osType:
+                    $ref: '#/components/schemas/Analytics/properties/osType'
+                  deviceType:
+                    $ref: '#/components/schemas/Analytics/properties/deviceType'
+        '401':
+          description: Not authenticated
+        '500':
+          description: Error fetching analytics
+
+  /api/analytics/{alias}:
+    get:
+      summary: Get analytics for a specific shortened URL
+      tags:
+        - Analytics
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: alias
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: URL-specific analytics data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Analytics'
+        '404':
+          description: Analytics not found
+        '500':
+          description: Error fetching analytics
+
+  /api/analytics/topic/{topic}:
+    get:
+      summary: Get analytics for all URLs in a specific topic
+      tags:
+        - Analytics
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: topic
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Topic-specific analytics data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalClicks:
+                    type: integer
+                  uniqueUsers:
+                    type: integer
+                  clicksByDate:
+                    $ref: '#/components/schemas/Analytics/properties/clicksByDate'
+                  urls:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        shortUrl:
+                          type: string
+                        totalClicks:
+                          type: integer
+                        uniqueUsers:
+                          type: integer
+        '500':
+          description: Error fetching topic analytics
+
+  /api/dashboard:
+    get:
+      summary: Get user dashboard data
+      tags:
+        - Dashboard
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Analytics'
+        '401':
+          description: Not authenticated
