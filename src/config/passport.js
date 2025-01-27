@@ -12,11 +12,10 @@ passport.use(
       accessType: 'offline',
     },
     async (accessToken, refreshToken, profile, done) => {
-      console.log('Access Token:', accessToken);
-      console.log('Refresh Token:', refreshToken);
-      console.log('Profile:', profile); // This will show user data
+    //  console.log('Access Token:', accessToken);
+     // console.log('Refresh Token:', refreshToken);
+     // console.log('Profile:', profile); 
 
-      // This is where you can store user information or handle the login
       const existingUser = await User.findOne({ googleId: profile.id });
 
       if (existingUser) {
@@ -45,7 +44,6 @@ passport.serializeUser((profile, done) => {
 
 passport.deserializeUser(async (userData, done) => {
   try {
-    // Use userData.id instead of profile.id
     const user = await User.findById(userData.id);
     done(null, user);
   } catch (err) {

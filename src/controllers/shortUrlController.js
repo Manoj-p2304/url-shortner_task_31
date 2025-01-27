@@ -1,10 +1,9 @@
 import ShortUrl from '../models/ShortUrl.js';
 import { nanoid } from 'nanoid';
-import isAuthenticated from '../middleware/auth.js';
 import { updateAnalytics } from './analyticsController.js';
 
 export const createShortUrl = async (req, res) => {
-    console.log("started")
+    // console.log("started")
     const { longUrl, customAlias, topic } = req.body;
     
     if (!req.user) {
@@ -12,10 +11,10 @@ export const createShortUrl = async (req, res) => {
     }
 
     const userId = req.user.googleId;
-    console.log("userId", userId)
+  //  console.log("userId", userId)
 
     try {
-        const shortUrl = nanoid(8);
+        const shortUrl = customAlias ||nanoid(8);
         const newShortUrl = await ShortUrl.create({
             longUrl,
             shortUrl,

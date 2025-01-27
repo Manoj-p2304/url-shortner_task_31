@@ -1,94 +1,127 @@
 import Analytics from '../models/Analytics.js';
 import ShortUrl from '../models/ShortUrl.js';
 import { getOS, getDeviceType } from '../utils/geoTracker.js';
+import redisClient from '../utils/redisClient.js';
 
 export const getSpecificUrlAnalytics = async (req, res) => {
-  const { alias } = req.params;
-  try {
-    const analytics = await Analytics.findOne({ shortUrl: alias });
-    if (!analytics) {
-      return res.status(404).json({ error: 'Analytics not found' });
-    }
-
-    const recentClicks = analytics.clicksByDate.slice(-7);
-
-    const osTypeWithUniqueUsers = analytics.osType.map(os => ({
-      ...os,
-      uniqueUsers: os.uniqueUsers.length
-    }));
-
-    const deviceTypeWithUniqueUsers = analytics.deviceType.map(device => ({
-      ...device,
-      uniqueUsers: device.uniqueUsers.length
-    }));
-
-    return res.json({
-      totalClicks: analytics.totalClicks,
-      uniqueUsers: analytics.uniqueUsers.length,
-      clicksByDate: recentClicks,
-      osType: osTypeWithUniqueUsers,
-      deviceType: deviceTypeWithUniqueUsers
-    });
-  } catch (err) {
-    console.error('Error fetching analytics:', err);
-    return res.status(500).json({ error: 'Error fetching analytics' });
-  }
-};
-
-export const getTopicAnalytics = async (req, res) => {
-  const { topic } = req.params;
-  try {
-    const urls = await ShortUrl.find({ topic });
-    const shortUrls = urls.map(url => url.shortUrl);
-
-    const analytics = await Analytics.find({ shortUrl: { $in: shortUrls } });
-
-    const totalClicks = analytics.reduce((sum, a) => sum + a.totalClicks, 0);
-    const uniqueUsers = new Set(analytics.flatMap(a => a.uniqueUsers)).size;
-    
-    const clicksByDate = analytics.reduce((acc, a) => {
-      a.clicksByDate.forEach(dateClick => {
-        const existing = acc.find(d => d.date === dateClick.date);
-        if (existing) {
-          existing.clickCount += dateClick.clickCount;
-        } else {
-          acc.push({ ...dateClick });
-        }
-      });
-      return acc;
-    }, []).slice(-7);
-
-    const urlDetails = shortUrls.map(shortUrl => {
-      const urlAnalytics = analytics.find(a => a.shortUrl === shortUrl);
-      return {
-        shortUrl,
-        totalClicks: urlAnalytics ? urlAnalytics.totalClicks : 0,
-        uniqueUsers: urlAnalytics ? urlAnalytics.uniqueUsers.length : 0
+    const { alias } = req.params;
+  
+    try {
+      const cacheKey = `analytics:${alias}`;
+      const cachedAnalytics = await redisClient.get(cacheKey);
+  
+      if (cachedAnalytics) {
+        console.log('Cache hit for analytics:', alias);
+        return res.json(JSON.parse(cachedAnalytics));
+      }
+  
+      const analytics = await Analytics.findOne({ shortUrl: alias });
+      if (!analytics) {
+        return res.status(404).json({ error: 'Analytics not found' });
+      }
+  
+      const recentClicks = analytics.clicksByDate.slice(-7);
+  
+      const osTypeWithUniqueUsers = analytics.osType.map(os => ({
+        ...os,
+        uniqueUsers: os.uniqueUsers.length
+      }));
+  
+      const deviceTypeWithUniqueUsers = analytics.deviceType.map(device => ({
+        ...device,
+        uniqueUsers: device.uniqueUsers.length
+      }));
+  
+      const response = {
+        totalClicks: analytics.totalClicks,
+        uniqueUsers: analytics.uniqueUsers.length,
+        clicksByDate: recentClicks,
+        osType: osTypeWithUniqueUsers,
+        deviceType: deviceTypeWithUniqueUsers
       };
-    });
+  
+      // Cache the response for 1 hour
+      await redisClient.set(cacheKey, JSON.stringify(response), 'EX', 3600);
+  
+      return res.json(response);
+    } catch (err) {
+      console.error('Error fetching analytics:', err);
+      return res.status(500).json({ error: 'Error fetching analytics' });
+    }
+  };
 
-    return res.json({
-      totalClicks,
-      uniqueUsers,
-      clicksByDate,
-      urls: urlDetails
-    });
-  } catch (err) {
-    console.error('Error fetching topic analytics:', err);
-    return res.status(500).json({ error: 'Error fetching topic analytics' });
-  }
-};
+  export const getTopicAnalytics = async (req, res) => {
+    const { topic } = req.params;
+  
+    try {
+      // Check if analytics data for the topic exists in Redis cache
+      const cachedData = await redisClient.get(`topic:${topic}`);
+      if (cachedData) {
+        console.log('Serving from Redis cache');
+        return res.json(JSON.parse(cachedData));
+      }
+  
+      // Fetch URLs by topic from the database
+      const urls = await ShortUrl.find({ topic });
+      const shortUrls = urls.map((url) => url.shortUrl);
+  
+      // Fetch analytics for the URLs
+      const analytics = await Analytics.find({ shortUrl: { $in: shortUrls } });
+  
+      const totalClicks = analytics.reduce((sum, a) => sum + a.totalClicks, 0);
+      const uniqueUsers = new Set(analytics.flatMap((a) => a.uniqueUsers)).size;
+  
+      const clicksByDate = analytics
+        .reduce((acc, a) => {
+          a.clicksByDate.forEach((dateClick) => {
+            const existing = acc.find((d) => d.date === dateClick.date);
+            if (existing) {
+              existing.clickCount += dateClick.clickCount;
+            } else {
+              acc.push({ ...dateClick });
+            }
+          });
+          return acc;
+        }, [])
+        .slice(-7);
+  
+      const urlDetails = shortUrls.map((shortUrl) => {
+        const urlAnalytics = analytics.find((a) => a.shortUrl === shortUrl);
+        return {
+          shortUrl,
+          totalClicks: urlAnalytics ? urlAnalytics.totalClicks : 0,
+          uniqueUsers: urlAnalytics ? urlAnalytics.uniqueUsers.length : 0,
+        };
+      });
+  
+      const response = {
+        totalClicks,
+        uniqueUsers,
+        clicksByDate,
+        urls: urlDetails,
+      };
+  
+      // Store the response in Redis cache with a TTL (Time-To-Live) of 1 hour
+      await redisClient.setEx(`topic:${topic}`, 3600, JSON.stringify(response));
+  
+      console.log('Serving fresh data and caching it');
+      return res.json(response);
+    } catch (err) {
+      console.error('Error fetching topic analytics:', err);
+      return res.status(500).json({ error: 'Error fetching topic analytics' });
+    }
+  };
 
 export const getOverallAnalytics = async (req, res) => {
   try {
     const userId = req.user.googleId;
-    console.log("userId", userId)
+  //  console.log("userId", userId)
     const urls = await ShortUrl.find({ userId });
-    console.log("urls", urls)
+  //  console.log("urls", urls)
     const shortUrls = urls.map(url => url.shortUrl);
 
     const analytics = await Analytics.find({ shortUrl: { $in: shortUrls } });
-    console.log("analytics", analytics)
+  //  console.log("analytics", analytics)
 
     const totalClicks = analytics.reduce((sum, a) => sum + a.totalClicks, 0);
     const uniqueUsers = new Set(analytics.flatMap(a => a.uniqueUsers)).size;
@@ -173,7 +206,6 @@ export const updateAnalytics = async (shortUrl, userAgent) => {
       const deviceName = getDeviceType(userAgent);
       const currentDate = new Date().toISOString().split('T')[0];
   
-      // Find or create analytics document
       let analytics = await Analytics.findOne({ shortUrl });
       
       if (!analytics) {
@@ -187,15 +219,12 @@ export const updateAnalytics = async (shortUrl, userAgent) => {
         });
       }
   
-      // Update total clicks
       analytics.totalClicks += 1;
   
-      // Update unique users
       if (!analytics.uniqueUsers.includes(userAgent)) {
         analytics.uniqueUsers.push(userAgent);
       }
   
-      // Update clicks by date
       const dateIndex = analytics.clicksByDate.findIndex(item => item.date === currentDate);
       if (dateIndex !== -1) {
         analytics.clicksByDate[dateIndex].clickCount += 1;
@@ -203,7 +232,6 @@ export const updateAnalytics = async (shortUrl, userAgent) => {
         analytics.clicksByDate.push({ date: currentDate, clickCount: 1 });
       }
   
-      // Update OS type
       const osIndex = analytics.osType.findIndex(item => item.osName === osName);
       if (osIndex !== -1) {
         analytics.osType[osIndex].uniqueClicks += 1;
@@ -218,7 +246,7 @@ export const updateAnalytics = async (shortUrl, userAgent) => {
         });
       }
   
-      // Update device type
+
       const deviceIndex = analytics.deviceType.findIndex(item => item.deviceName === deviceName);
       if (deviceIndex !== -1) {
         analytics.deviceType[deviceIndex].uniqueClicks += 1;
@@ -238,3 +266,6 @@ export const updateAnalytics = async (shortUrl, userAgent) => {
       console.error('Error updating analytics:', err);
     }
   };
+
+
+  
