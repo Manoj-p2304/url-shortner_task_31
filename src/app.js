@@ -4,15 +4,11 @@ import connectDB from './config/mongo.js';
 import passport from './config/passport.js';
 import authRoutes from './routes/auth.js';
 import shortUrlRoutes from './routes/url.js';
-import { rateLimiterMiddleware } from './middleware/rateLimiter.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(rateLimiterMiddleware);
-
 connectDB();
-
 
 app.use(express.json());
 app.use(session({

@@ -11,7 +11,7 @@ const router = express.Router();
 
 router.post('/shorten',isAuthenticated,createShortUrl);
 router.get('/shorten/:alias', isAuthenticated,cacheMiddleware,getShortUrl);
-router.get('/analytics/overall', isAuthenticated,cacheMiddleware,rateLimiterMiddleware, getOverallAnalytics); // Specific route first
+router.get('/analytics/overall', isAuthenticated,rateLimiterMiddleware, getOverallAnalytics); // Specific route first
 router.get('/analytics/:alias', isAuthenticated,cacheMiddleware, getSpecificUrlAnalytics); // General route last
 router.get('/analytics/topic/:topic', isAuthenticated,cacheMiddleware, getTopicAnalytics);
 router.get('/dashboard',isAuthenticated, dashboard);
