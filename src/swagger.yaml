@@ -345,6 +345,21 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Analytics'
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Successfully logged in!"
+                  user:
+                    type: string
+                    example: "Username"
         '401':
           description: Not authenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "User not authenticated"
