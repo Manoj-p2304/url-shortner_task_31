@@ -3,173 +3,193 @@
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)  
 ![Version](https://img.shields.io/badge/Version-1.0.0-green.svg)  
 
-A scalable URL Shortener API with **Google OAuth authentication**, **custom aliases**, and **comprehensive analytics**.
+A robust URL shortening service with Google OAuth authentication and comprehensive analytics tracking. This API allows users to create shortened URLs, track their usage, and analyze engagement patterns across different devices and operating systems.
 
----
+## 🚀 Features
 
-## Table of Contents
-1. [Overview](#overview)
-2. [Features](#features)
-3. [Getting Started](#getting-started)
-4. [API Endpoints](#api-endpoints)
-5. [Authentication](#authentication)
-6. [Schemas](#schemas)
-7. [Contributing](#contributing)
-8. [License](#license)
+- **URL Shortening**: Create shortened URLs with optional custom aliases
+- **Google OAuth Authentication**: Secure user authentication and management
+- **Topic Organization**: Categorize URLs by topics for better organization
+- **Comprehensive Analytics**: Track clicks, unique users, and usage patterns
+- **Device & OS Tracking**: Monitor access across different platforms
+- **Custom Alias Support**: Create memorable, custom short URLs
+- **Dashboard**: User-specific dashboard for managing shortened URLs
 
----
+## 📋 Technical Stack
 
-## Overview
-The URL Shortener API allows users to shorten URLs, create custom aliases, and track analytics on their links. Authentication is handled using Google OAuth, ensuring secure access for users. 
+- **API Version**: 1.0.0
+- **Authentication**: Google OAuth 2.0
+- **Session Management**: Cookie-based (`connect.sid`)
+- **Response Format**: JSON
 
----
+## 🔐 Authentication
 
-## Features
-- **Google OAuth Authentication**
-- Shorten URLs with optional custom aliases
-- Track analytics, including:
-  - Total and unique clicks
-  - Clicks by date
-  - Device and OS breakdowns
-- Filter analytics by topics
-- Comprehensive API documentation with Swagger/OpenAPI
+The API uses Google OAuth 2.0 for authentication. Users must authenticate through Google before accessing protected endpoints.
 
----
+### Authentication Endpoints
 
-## Getting Started
+| Endpoint | Method | Description |
+|----------|---------|-------------|
+| `/auth/google` | GET | Initiates Google OAuth flow |
+| `/auth/google/callback` | GET | Handles OAuth callback |
+| `/auth/logout` | GET | Logs out current user |
 
-### Prerequisites
-- Node.js (v14+)
-- MongoDB
-
-### Installation
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-repo/url-shortener-api.git
-   cd url-shortener-api
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Set up environment variables in a `.env` file:
-   ```env
-   GOOGLE_CLIENT_ID=<your-google-client-id>
-   GOOGLE_CLIENT_SECRET=<your-google-client-secret>
-   MONGO_URI=<your-mongodb-uri>
-   SESSION_SECRET=<your-session-secret>
-   ```
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
-
-### Running Tests
-Run the test suite using:
-```bash
-npm test
-```
-
----
-
-## API Endpoints
-
-### Authentication
-#### `GET /auth/google`
-- **Description:** Initiates Google OAuth2 authentication
-- **Response:** Redirects to the Google consent screen
-
-#### `GET /auth/google/callback`
-- **Description:** Handles the response from Google after user authorization
-- **Response:** Redirects to the dashboard on success
-
-#### `GET /auth/logout`
-- **Description:** Logs out the user
-- **Response:** `{ "message": "Successfully logged out!" }`
-
----
+## 🛠 API Endpoints
 
 ### URL Management
-#### `POST /api/shorten`
-- **Description:** Create a shortened URL
-- **Request Body:**
-  ```json
-  {
-    "longUrl": "https://www.example.com/very/long/url",
-    "customAlias": "my-custom-link",
-    "topic": "technology"
-  }
-  ```
-- **Response:**
-  ```json
-  {
-    "shortUrl": "abc123",
-    "createdAt": "2025-01-28T10:00:00Z"
-  }
-  ```
 
-#### `GET /api/shorten/{alias}`
-- **Description:** Redirects to the original URL
-- **Parameters:**
-  - `alias`: Shortened alias (e.g., `abc123`)
+#### Create Shortened URL
+```http
+POST /api/shorten
+```
+**Request Body**:
+```json
+{
+  "longUrl": "https://www.example.com/very/long/url",
+  "customAlias": "my-custom-link",  // optional
+  "topic": "technology"             // optional
+}
+```
+**Response** (201 Created):
+```json
+{
+  "shortUrl": "abc123",
+  "createdAt": "2025-01-28T12:00:00Z"
+}
+```
 
----
+#### Access Shortened URL
+```http
+GET /api/shorten/{alias}
+```
+- Redirects to original URL (302)
+- Tracks analytics automatically
 
 ### Analytics
-#### `GET /api/analytics/overall`
-- **Description:** Get analytics for all user's URLs
-- **Response:**
-  ```json
-  {
-    "totalUrls": 10,
-    "totalClicks": 150,
-    "uniqueUsers": 75
-  }
-  ```
 
-#### `GET /api/analytics/{alias}`
-- **Description:** Get analytics for a specific shortened URL
-- **Parameters:**
-  - `alias`: Shortened alias
-- **Response:**
-  ```json
-  {
-    "totalClicks": 50,
-    "uniqueUsers": 30,
-    "clicksByDate": [
-      { "date": "2025-01-27", "clickCount": 25 }
-    ],
-    "osType": [
-      { "osName": "Windows", "uniqueClicks": 15 }
-    ]
-  }
-  ```
-
-#### `GET /api/analytics/topic/{topic}`
-- **Description:** Get analytics for all URLs in a specific topic
-- **Parameters:**
-  - `topic`: Topic name (e.g., `technology`)
-
----
-
-## Schemas
-
-### ShortUrl
-```yaml
-longUrl: string
-shortUrl: string
-customAlias: string
-topic: string
-userId: string
-createdAt: date-time
+#### Overall Analytics
+```http
+GET /api/analytics/overall
 ```
+Returns comprehensive statistics including:
+- Total URLs and clicks
+- Unique visitors
+- Daily click distribution
+- Device and OS breakdown
+
+#### URL-Specific Analytics
+```http
+GET /api/analytics/{alias}
+```
+Provides detailed analytics for a specific shortened URL:
+- Total clicks
+- Unique visitors
+- Temporal distribution
+- Platform statistics
+
+#### Topic-Based Analytics
+```http
+GET /api/analytics/topic/{topic}
+```
+Aggregates statistics for all URLs within a specific topic:
+- Combined clicks and visitors
+- URL-specific breakdowns
+- Temporal trends
+
+### Dashboard
+```http
+GET /api/dashboard
+```
+Provides user-specific dashboard data and authentication status.
+
+## 📊 Analytics Data Structure
+
+The analytics system tracks the following metrics:
+
+```json
+{
+  "totalClicks": 150,
+  "uniqueUsers": 75,
+  "clicksByDate": [
+    {
+      "date": "2025-01-27",
+      "clickCount": 25
+    }
+  ],
+  "osType": [
+    {
+      "osName": "Windows",
+      "uniqueClicks": 45,
+      "uniqueUsers": 30
+    }
+  ],
+  "deviceType": [
+    {
+      "deviceName": "Desktop",
+      "uniqueClicks": 80,
+      "uniqueUsers": 50
+    }
+  ]
+}
+```
+
+## ⚠️ Error Handling
+
+The API uses standard HTTP status codes:
+- `201`: Resource created successfully
+- `302`: Redirect to original URL
+- `401`: Authentication required
+- `404`: Resource not found
+- `500`: Server error
+
+Each error response includes a descriptive message:
+```json
+{
+  "error": "Error description"
+}
+```
+
+## 🔒 Security
+
+- All API endpoints (except authentication) require valid session
+- Session management via secure cookies
+- OAuth state parameter validation
+- User-specific data isolation
+
+## 💻 Development
+
+To run the server locally:
+
+1. Configure environment variables:
+   ```
+   RENDER_EXTERNAL_URL=http://localhost:3000
+   ```
+2. Install dependencies and start the server
+3. Access the API at the configured `RENDER_EXTERNAL_URL`
+
+## 📝 Models
 
 ### User
-```yaml
-email: string
-name: string
-googleId: string
+```json
+{
+  "email": "user@example.com",
+  "name": "John Doe",
+  "googleId": "118234567892214561234"
+}
 ```
+
+### Short URL
+```json
+{
+  "longUrl": "https://www.example.com/very/long/url",
+  "shortUrl": "abc123",
+  "customAlias": "my-custom-link",
+  "topic": "technology",
+  "userId": "118234567892214561234",
+  "createdAt": "2025-01-28T12:00:00Z"
+}
+```
+
 
 ### Analytics
 ```yaml
@@ -187,24 +207,7 @@ deviceType:
 ```
 
 ---
-
-## Contributing
-1. Fork the repository.
-2. Create a new branch:
-   ```bash
-   git checkout -b feature-name
-   ```
-3. Commit your changes:
-   ```bash
-   git commit -m "Added new feature"
-   ```
-4. Push to the branch:
-   ```bash
-   git push origin feature-name
-   ```
-5. Create a Pull Request.
-
----
+For additional support or feature requests, please open an issue in the repository.
 
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
