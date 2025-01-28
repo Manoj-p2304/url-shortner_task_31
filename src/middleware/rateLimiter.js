@@ -5,7 +5,7 @@ import redisClient from '../utils/redisClient.js';
 const rateLimiter = new RateLimiterRedis({
   storeClient: redisClient,
   keyPrefix: 'middleware', // Prefix for Redis keys
-  points: 50,              // 50 requests
+  points: 200,              // 50 requests
   duration: 3600,            // Per 1 hour
 });
 

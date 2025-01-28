@@ -4,7 +4,7 @@ info:
   description: API documentation for the URL shortener service with Google OAuth authentication and analytics
   version: 1.0.0
 servers:
-  - url: ${SERVER_URL}
+  - url: ${RENDER_EXTERNAL_URL}
     description: Local development server
 
 components:

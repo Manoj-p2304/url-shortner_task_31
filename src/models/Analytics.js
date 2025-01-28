@@ -1,25 +1,29 @@
 import mongoose from 'mongoose';
 
 const AnalyticsSchema = new mongoose.Schema({
-    shortUrl: String,
-    totalClicks: { type: Number, default: 0 },
-    uniqueUsers: { type: [String], default: [] },
-    clicksByDate: [{
-      date: String,
-      clickCount: Number
-    }],
-    osType: [{
-      osName: String,
-      uniqueClicks: Number,
-      uniqueUsers: [String]
-    }],
-    deviceType: [{
-      deviceName: String,
-      uniqueClicks: Number,
-      uniqueUsers: [String]
-    }]
-  });
+  shortUrl: { type: String, required: true, unique: true },
+  totalClicks: { type: Number, default: 0 },
+  uniqueUsers: { type: [String], default: [] },
+  clicksByDate: [
+    {
+      date: { type: String },
+      clickCount: { type: Number, default: 0 },
+    },
+  ],
+  osType: [
+    {
+      osName: { type: String },
+      uniqueClicks: { type: Number, default: 0 },
+      uniqueUsers: { type: [String], default: [] },
+    },
+  ],
+  deviceType: [
+    {
+      deviceName: { type: String },
+      uniqueClicks: { type: Number, default: 0 },
+      uniqueUsers: { type: [String], default: [] },
+    },
+  ],
+});
 
-const Analytics = mongoose.model('Analytics', AnalyticsSchema);
-
-export default Analytics;
+export default mongoose.model('Analytics', AnalyticsSchema);
