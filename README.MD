@@ -1,9 +1,22 @@
 # URL Shortener API
 
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)  
-![Version](https://img.shields.io/badge/Version-1.0.0-green.svg)  
+![Version](https://img.shields.io/badge/Version-1.0.0-green.svg) 
 
 A robust URL shortening service with Google OAuth authentication and comprehensive analytics tracking. This API allows users to create shortened URLs, track their usage, and analyze engagement patterns across different devices and operating systems.
+
+## 📚 API Documentation
+
+Interactive API documentation is available through Swagger UI:
+```http
+GET /api-docs
+```
+Visit this endpoint in your browser to:
+- Explore all available endpoints
+- Test API calls directly from the browser
+- View request/response schemas
+- Understand authentication requirements
+- Download OpenAPI specification
 
 ## 🚀 Features
 
@@ -14,6 +27,7 @@ A robust URL shortening service with Google OAuth authentication and comprehensi
 - **Device & OS Tracking**: Monitor access across different platforms
 - **Custom Alias Support**: Create memorable, custom short URLs
 - **Dashboard**: User-specific dashboard for managing shortened URLs
+- **Interactive API Docs**: Swagger UI for testing and exploration
 
 ## 📋 Technical Stack
 
@@ -21,6 +35,7 @@ A robust URL shortening service with Google OAuth authentication and comprehensi
 - **Authentication**: Google OAuth 2.0
 - **Session Management**: Cookie-based (`connect.sid`)
 - **Response Format**: JSON
+- **Documentation**: OpenAPI 3.0.0 / Swagger UI
 
 ## 🔐 Authentication
 
@@ -47,7 +62,7 @@ POST /api/shorten
 {
   "longUrl": "https://www.example.com/very/long/url",
   "customAlias": "my-custom-link",  // optional
-  "topic": "technology"             // optional
+  "topic": "technology"             
 }
 ```
 **Response** (201 Created):
@@ -156,16 +171,46 @@ Each error response includes a descriptive message:
 - OAuth state parameter validation
 - User-specific data isolation
 
+[Previous sections remain the same...]
+
 ## 💻 Development
 
 To run the server locally:
 
-1. Configure environment variables:
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Manoj-p2304/url-shortner_task_31.git
    ```
+
+2. Navigate to the project directory:
+   ```bash
+   cd url-shortner_task_31
+   ```
+
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+4. Configure environment variables:
+   ```bash
+   # Create a .env file in the root directory
    RENDER_EXTERNAL_URL=http://localhost:3000
+   GOOGLE_CLIENT_ID=your_google_client_id
+   GOOGLE_CLIENT_SECRET=your_google_client_secret
+   MONGODB_URI=your_mongodb_connection_string
+   SESSION_SECRET=your_session_secret
    ```
-2. Install dependencies and start the server
-3. Access the API at the configured `RENDER_EXTERNAL_URL`
+
+5. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+6. Access the API at `http://localhost:3000`
+
+7. Visit `/api/api-docs` to explore the interactive API documentation
+
 
 ## 📝 Models
 
@@ -190,20 +235,32 @@ To run the server locally:
 }
 ```
 
-
 ### Analytics
-```yaml
-totalClicks: integer
-uniqueUsers: integer
-clicksByDate:
-  - date: string
-    clickCount: integer
-osType:
-  - osName: string
-    uniqueClicks: integer
-deviceType:
-  - deviceName: string
-    uniqueClicks: integer
+```json
+{
+  "totalClicks": 150,
+  "uniqueUsers": 75,
+  "clicksByDate": [
+    {
+      "date": "2025-01-27",
+      "clickCount": 25
+    }
+  ],
+  "osType": [
+    {
+      "osName": "Windows",
+      "uniqueClicks": 45,
+      "uniqueUsers": 30
+    }
+  ],
+  "deviceType": [
+    {
+      "deviceName": "Desktop",
+      "uniqueClicks": 80,
+      "uniqueUsers": 50
+    }
+  ]
+}
 ```
 
 ---
