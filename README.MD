@@ -45,8 +45,8 @@ The URL Shortener API allows users to shorten URLs, create custom aliases, and t
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-repo/url-shortener-api.git
-   cd url-shortener-api
+   git clone https://github.com/Manoj-p2304/url-shortner_task_31.git
+   cd url-shortner_task_31
    ```
 2. Install dependencies:
    ```bash
@@ -121,10 +121,30 @@ npm test
 - **Response:**
   ```json
   {
-    "totalUrls": 10,
-    "totalClicks": 150,
-    "uniqueUsers": 75
-  }
+  "totalUrls": 10,
+  "totalClicks": 0,
+  "uniqueUsers": 0,
+  "clicksByDate": [
+    {
+      "date": "2025-01-27",
+      "clickCount": 25
+    }
+  ],
+  "osType": [
+    {
+      "osName": "Windows",
+      "uniqueClicks": 45,
+      "uniqueUsers": 30
+    }
+  ],
+  "deviceType": [
+    {
+      "deviceName": "Desktop",
+      "uniqueClicks": 80,
+      "uniqueUsers": 50
+    }
+  ]
+}
   ```
 
 #### `GET /api/analytics/{alias}`
@@ -141,7 +161,13 @@ npm test
     ],
     "osType": [
       { "osName": "Windows", "uniqueClicks": 15 }
-    ]
+    ],
+   "deviceType": [
+    {
+      "deviceName": "Desktop",
+      "uniqueClicks": 80
+    }
+  ]
   }
   ```
 
